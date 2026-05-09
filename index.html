@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מחולל מועמדים לפרימריז – הדמוקרטים</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="photos.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; }
+    .card-enter { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .medal-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .medal-2 { background: linear-gradient(135deg, #C0C0C0, #A8A8A8); }
+    .medal-3 { background: linear-gradient(135deg, #CD7F32, #A05000); }
+
+    /* Colored range slider */
+    .color-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 14px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(to left,
+        #1e3a8a 0%,
+        #1d4ed8 25%,
+        #3b82f6 50%,
+        #86efac 75%,
+        #d1d5db 100%
+      );
+    }
+    .color-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #1d4ed8;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .color-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 12px rgba(29,78,216,0.4);
+    }
+    .color-slider::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #1d4ed8;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    .color-slider::-moz-range-track {
+      height: 14px;
+      border-radius: 8px;
+      background: linear-gradient(to left,
+        #1e3a8a 0%,
+        #1d4ed8 25%,
+        #3b82f6 50%,
+        #86efac 75%,
+        #d1d5db 100%
+      );
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+// ======= PARAMETERS =======
+const PARAMS = [
+  { key: 'political',   label: 'ניסיון פוליטי',   desc: 'שר / סגן שר / חבר כנסת לשעבר' },
+  { key: 'municipal',   label: 'ניסיון מוניציפאלי', desc: 'ראש ראשות / סגן / חבר מועצה' },
+  { key: 'management',  label: 'ניסיון ניהולי בכיר', desc: 'מנכ"ל / סמנכ"ל של תאגיד ציבורי או פרטי' },
+  { key: 'sector',      label: 'ייצוג מגזר',        desc: 'ערבי / דרוזי / אתיופי / להט"ב / מרחב כפרי' },
+  { key: 'periphery',   label: 'נציג הפריפריה',      desc: 'מועמד המייצג את הפריפריה הגיאוגרפית' },
+  { key: 'protest',     label: 'מוביל מחאה',         desc: 'הוביל או השתתף בפעילות מחאה משמעותית' },
+];
+
+// ======= WOMEN CANDIDATES =======
+const WOMEN = [
+  { name: 'נעמה לזימי',        political:1, municipal:1, management:0, sector:0, periphery:0, protest:0,
+    bio: 'חברת כנסת, יו"ר ועדת הצעירים, חברת ועדות הכספים והחינוך. לשעבר חברת מועצת העיר חיפה. תושבת חולון.' },
+  { name: 'אמילי מואטי',       political:1, municipal:0, management:0, sector:0, periphery:0, protest:0,
+    bio: 'חברת כנסת לשעבר, כיהנה כסגנית יו"ר הכנסת. עיתונאית וסופרת כלת פרס שרת התרבות לספרי ביכורים. תושבת תל אביב.' },
+  { name: 'אפרת ריטן',         political:1, municipal:0, management:0, sector:0, periphery:0, protest:0,
+    bio: 'יו"ר סיעת הדמוקרטים בכנסת ה-25, עורכת דין ואשת תקשורת לשעבר. חברה ב-5 ועדות: חו"ב, חוקה, כלכלה, עבודה ורווחה ותקשורת. תושבת תל אביב.' },
+  { name: 'מיכל רוזין',         political:1, municipal:0, management:0, sector:0, periphery:0, protest:0,
+    bio: 'ח"כ ויו"ר סיעת מרצ, מנכ"לית מרכזי הסיוע לנפגעות לשעבר. יו"ר עמותת "אזרחים קטנים" לחינוך לדמוקרטיה בגיל הרך. תושבת פתח תקווה.' },
+  { name: 'גבי לסקי',           political:1, municipal:1, management:0, sector:0, periphery:0, protest:0,
+    bio: 'חברת כנסת לשעבר ממרצ, עורכת דין ומקימת מערך עוטף עצורים. לשעבר חברת מועצת העיר תל אביב. תושבת תל אביב.' },
+  { name: 'ענבר בזק',           political:1, municipal:0, management:1, sector:1, periphery:1, protest:1,
+    bio: 'חברת כנסת לשעבר, יו"ר שדולת הגליל, שדולת העסקים הקטנים והשדולה לקשב. לשעבר מנכ"לית החברה הכלכלית לפיתוח הגליל העליון, הובילה את מחאת העצמאים. בת קיבוץ דן, תושבת יובלים.' },
+  { name: 'רותם סיון',          political:0, municipal:0, management:0, sector:1, periphery:0, protest:1,
+    bio: '' },
+  { name: 'איילת השחר סיידוף', political:0, municipal:0, management:0, sector:1, periphery:0, protest:1,
+    bio: '' },
+  { name: 'מורן מישל',          political:0, municipal:0, management:0, sector:0, periphery:0, protest:1,
+    bio: '' },
+  { name: 'מורן זר כצשטיין',   political:0, municipal:0, management:0, sector:0, periphery:0, protest:1,
+    bio: '' },
+  { name: 'הדס רגולסקי',        political:0, municipal:1, management:0, sector:0, periphery:0, protest:1,
+    bio: '' },
+  { name: 'לי הופמן',           political:0, municipal:0, management:0, sector:0, periphery:0, protest:1,
+    bio: '' },
+  { name: 'סומיה בשיר',         political:0, municipal:0, management:0, sector:1, periphery:0, protest:1,
+    bio: "פעילה חברתית ומנהיגה אזרחית, מובילת שותפות ערבית-יהודית ופועלת למען דמוקרטיה, ביטחון אזרחי ושוויון בישראל. תושבת ג'ת." },
+  { name: 'מהרטה ברון רון',     political:0, municipal:1, management:0, sector:1, periphery:0, protest:0,
+    bio: '' },
+  { name: 'ענבל וורטמן שהם',   political:0, municipal:0, management:0, sector:1, periphery:1, protest:0,
+    bio: '' },
+  { name: 'קתי פיאצקי',         political:0, municipal:1, management:0, sector:0, periphery:0, protest:1,
+    bio: '' },
+];
+
+// ======= MEN CANDIDATES =======
+const MEN = [
+  { name: 'גלעד קריב',     political:1, municipal:0, management:1, sector:0, periphery:0, protest:0, bio: '' },
+  { name: 'נמרוד שפר',     political:0, municipal:0, management:1, sector:1, periphery:0, protest:1, bio: '' },
+  { name: 'אבי דבוש',      political:0, municipal:0, management:0, sector:1, periphery:1, protest:1, bio: '' },
+  { name: 'תומר אביטל',    political:0, municipal:0, management:0, sector:0, periphery:0, protest:1, bio: '' },
+  { name: 'נאור נרקיס',    political:0, municipal:0, management:0, sector:1, periphery:0, protest:1, bio: '' },
+  { name: 'יאיר רובינשטיין', political:0, municipal:0, management:1, sector:0, periphery:0, protest:1, bio: '' },
+  { name: 'רם שפע',        political:1, municipal:0, management:0, sector:1, periphery:0, protest:0, bio: '' },
+  { name: 'ערן עציון',      political:0, municipal:0, management:1, sector:0, periphery:0, protest:0, bio: '' },
+  { name: 'יריב אופנהימר', political:0, municipal:0, management:0, sector:0, periphery:0, protest:0, bio: '' },
+  { name: 'משה רדמן',      political:0, municipal:0, management:1, sector:0, periphery:0, protest:1, bio: '' },
+  { name: 'מאליק בדר',     political:0, municipal:1, management:0, sector:0, periphery:1, protest:0, bio: '' },
+  { name: 'גאלב סלאמנה',   political:0, municipal:0, management:0, sector:1, periphery:1, protest:1, bio: '' },
+  { name: 'עלי סלאלחה',    political:1, municipal:0, management:0, sector:1, periphery:1, protest:0, bio: '' },
+  { name: 'אעיד בדיר',     political:0, municipal:1, management:0, sector:1, periphery:0, protest:0, bio: '' },
+  { name: 'נדל מסאלחה',    political:0, municipal:0, management:0, sector:1, periphery:0, protest:0, bio: '' },
+  { name: 'אמיר חניפאס',   political:0, municipal:0, management:0, sector:1, periphery:1, protest:0, bio: '' },
+  { name: 'מוסי רז',       political:1, municipal:0, management:0, sector:0, periphery:0, protest:0, bio: '' },
+  { name: 'דני אלגרט',     political:0, municipal:0, management:0, sector:0, periphery:0, protest:1, bio: '' },
+  { name: 'איהאב שליהאן',  political:0, municipal:0, management:0, sector:1, periphery:0, protest:0, bio: '' },
+];
+
+// ======= SCORING =======
+function scoreCandidate(candidate, weights) {
+  return PARAMS.reduce((sum, p) => sum + (candidate[p.key] || 0) * weights[p.key], 0);
+}
+
+function maxPossibleScore(weights) {
+  return PARAMS.reduce((sum, p) => sum + weights[p.key], 0);
+}
+
+function getMatchReasons(candidate, weights) {
+  return PARAMS
+    .filter(p => candidate[p.key] && weights[p.key] >= 3)
+    .map(p => p.label);
+}
+
+// ======= MEDAL COLORS =======
+const MEDALS = [
+  { bg: 'from-yellow-400 to-orange-400', border: 'border-yellow-400', num: '🥇' },
+  { bg: 'from-gray-300 to-gray-400',     border: 'border-gray-400',   num: '🥈' },
+  { bg: 'from-orange-600 to-orange-800', border: 'border-orange-700', num: '🥉' },
+];
+
+// ======= SLIDER PAGE COMPONENT =======
+function SliderPage({ param, value, onChange, step, total, onNext, onPrev, onFinish }) {
+  const isLast = step === total - 1;
+
+  const ICONS = {
+    political:  '🏛️',
+    municipal:  '🏙️',
+    management: '💼',
+    sector:     '🤝',
+    periphery:  '📍',
+    protest:    '✊',
+  };
+
+  const LABELS = ['לא חשוב בכלל', 'לא ממש חשוב', 'חשוב במידה מה', 'חשוב', 'חשוב מאוד', 'קריטי!'];
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+      {/* Progress dots */}
+      <div className="flex justify-center gap-2 mb-6">
+        {Array.from({length: total}).map((_, i) => (
+          <div key={i} className={`h-2 rounded-full transition-all ${
+            i === step ? 'w-8 bg-blue-600' : i < step ? 'w-2 bg-blue-300' : 'w-2 bg-gray-200'
+          }`} />
+        ))}
+      </div>
+
+      {/* Question */}
+      <div className="text-center mb-8">
+        <div className="text-5xl mb-3">{ICONS[param.key]}</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">{param.label}</h2>
+        <p className="text-gray-500 text-sm">{param.desc}</p>
+        <p className="text-gray-400 text-xs mt-1">כמה זה חשוב לכם?</p>
+      </div>
+
+      {/* Slider */}
+      <div className="px-2 mb-2">
+        <input
+          type="range" min="1" max="5" value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="color-slider"
+        />
+      </div>
+      <div className="flex justify-between text-xs text-gray-400 mb-4 px-1">
+        <span>1 — לא חשוב</span>
+        <span>5 — חשוב מאוד</span>
+      </div>
+
+      {/* Selected value badge */}
+      <div className="text-center mb-6">
+        <span className="inline-block bg-blue-600 text-white font-bold text-lg px-6 py-2 rounded-full shadow">
+          {value} — {LABELS[value]}
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex gap-3">
+        {step > 0 && (
+          <button onClick={onPrev}
+            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors">
+            ← חזור
+          </button>
+        )}
+        <button
+          onClick={isLast ? onFinish : onNext}
+          className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors shadow"
+        >
+          {isLast ? '🔍 הצג תוצאות' : 'הבא →'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ======= CANDIDATE CARD =======
+function CandidateCard({ candidate, rank, score, maxScore, weights }) {
+  const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const medal = MEDALS[rank];
+  const photo = (typeof PHOTOS !== 'undefined') ? PHOTOS[candidate.name] : null;
+  const reasons = getMatchReasons(candidate, weights);
+
+  return (
+    <div className={`card-enter bg-white rounded-2xl shadow-lg border-2 ${medal.border} overflow-hidden mb-4`}>
+      <div className={`bg-gradient-to-l ${medal.bg} px-4 py-2 flex items-center gap-2`}>
+        <span className="text-2xl">{medal.num}</span>
+        <span className="font-bold text-gray-800 text-lg">{candidate.name}</span>
+        <span className="mr-auto bg-white bg-opacity-70 rounded-full px-3 py-0.5 font-bold text-blue-800 text-sm">
+          {pct}% התאמה
+        </span>
+      </div>
+      <div className="flex gap-4 p-4">
+        {photo ? (
+          <img src={photo} alt={candidate.name}
+            className="w-24 h-24 rounded-xl object-cover flex-shrink-0 border border-gray-200 shadow"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+            <span className="text-4xl">👤</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="mb-2">
+            <div className="flex gap-1">
+              {PARAMS.map(p => (
+                <div key={p.key} title={p.label}
+                  className={`flex-1 h-3 rounded-full ${candidate[p.key] ? 'bg-blue-500' : 'bg-gray-200'}`}
+                />
+              ))}
+            </div>
+            <div className="flex gap-1 mt-0.5">
+              {PARAMS.map(p => (
+                <div key={p.key} className="flex-1 text-center" style={{fontSize:'8px', color:'#999'}}>
+                  {p.label.split(' ')[0]}
+                </div>
+              ))}
+            </div>
+          </div>
+          {candidate.bio && (
+            <p className="text-gray-600 text-sm leading-relaxed">{candidate.bio}</p>
+          )}
+          {reasons.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {reasons.map(r => (
+                <span key={r} className="bg-blue-50 text-blue-700 text-xs rounded-full px-2 py-0.5 border border-blue-200">
+                  ✓ {r}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======= RESULTS SECTION =======
+function ResultsSection({ weights, onRestart }) {
+  const maxScore = maxPossibleScore(weights);
+
+  const topWomen = useMemo(() =>
+    [...WOMEN]
+      .map(c => ({ ...c, score: scoreCandidate(c, weights) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3),
+    [weights]
+  );
+
+  const topMen = useMemo(() =>
+    [...MEN]
+      .map(c => ({ ...c, score: scoreCandidate(c, weights) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3),
+    [weights]
+  );
+
+  return (
+    <div>
+      {/* Women results */}
+      <div className="mb-2">
+        <h2 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
+          <span>👩</span> 3 המועמדות המתאימות ביותר
+        </h2>
+        {topWomen.map((c, i) => (
+          <CandidateCard key={c.name} candidate={c} rank={i} score={c.score} maxScore={maxScore} weights={weights} />
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div className="border-t-2 border-dashed border-gray-200 my-6" />
+
+      {/* Men results */}
+      <div className="mb-2">
+        <h2 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
+          <span>👨</span> 3 המועמדים המתאימים ביותר
+        </h2>
+        {topMen.map((c, i) => (
+          <CandidateCard key={c.name} candidate={c} rank={i} score={c.score} maxScore={maxScore} weights={weights} />
+        ))}
+      </div>
+
+      <p className="text-center text-gray-400 text-xs mt-4 mb-2">
+        הניקוד מבוסס על הנתונים הרשמיים שסיפקה הרשימה. זהו כלי עזר בלבד.
+      </p>
+      <button onClick={onRestart}
+        className="w-full py-3 rounded-xl border-2 border-blue-200 text-blue-600 font-bold hover:bg-blue-50 transition-colors">
+        🔄 התחל מחדש
+      </button>
+    </div>
+  );
+}
+
+// ======= MAIN APP =======
+function App() {
+  const [step, setStep] = useState(0); // 0..5 = slider pages, 6 = results
+  const [weights, setWeights] = useState({ political:3, municipal:3, management:3, sector:3, periphery:3, protest:3 });
+
+  const currentParam = PARAMS[step];
+  const isResults = step >= PARAMS.length;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="inline-block bg-blue-700 text-white px-5 py-1 rounded-full text-sm font-bold mb-2 tracking-wide">
+          הדמוקרטים
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">מחולל מועמדים לפרימריז</h1>
+        {!isResults && (
+          <p className="text-gray-500 text-sm mt-1">שאלה {step + 1} מתוך {PARAMS.length} — דרגו כל פרמטר לפי חשיבותו</p>
+        )}
+      </div>
+
+      {isResults ? (
+        <ResultsSection weights={weights} onRestart={() => setStep(0)} />
+      ) : (
+        <SliderPage
+          param={currentParam}
+          value={weights[currentParam.key]}
+          onChange={v => setWeights(w => ({ ...w, [currentParam.key]: v }))}
+          step={step}
+          total={PARAMS.length}
+          onNext={() => setStep(s => s + 1)}
+          onPrev={() => setStep(s => s - 1)}
+          onFinish={() => setStep(PARAMS.length)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
