@@ -81,12 +81,12 @@ const { useState, useMemo } = React;
 
 // ======= PARAMETERS =======
 const PARAMS = [
-  { key: 'political',   label: 'ניסיון פוליטי',   desc: 'שר / סגן שר / חבר כנסת לשעבר' },
-  { key: 'municipal',   label: 'ניסיון מוניציפאלי', desc: 'ראש ראשות / סגן / חבר מועצה' },
-  { key: 'management',  label: 'ניסיון ניהולי בכיר', desc: 'מנכ"ל / סמנכ"ל של תאגיד ציבורי או פרטי' },
-  { key: 'sector',      label: 'ייצוג מגזר',        desc: 'ערבי / דרוזי / אתיופי / להט"ב / מרחב כפרי' },
-  { key: 'periphery',   label: 'נציג הפריפריה',      desc: 'מועמד המייצג את הפריפריה הגיאוגרפית' },
-  { key: 'protest',     label: 'מוביל מחאה',         desc: 'הוביל או השתתף בפעילות מחאה משמעותית' },
+  { key: 'political',   label: 'ניסיון פוליטי',    short: 'פוליטי',    desc: 'שר / סגן שר / חבר כנסת לשעבר' },
+  { key: 'municipal',   label: 'ניסיון מוניציפאלי', short: 'מוניציפ׳', desc: 'ראש ראשות / סגן / חבר מועצה' },
+  { key: 'management',  label: 'ניסיון ניהולי',     short: 'ניהולי',    desc: 'מנכ"ל / סמנכ"ל של תאגיד ציבורי או פרטי' },
+  { key: 'sector',      label: 'ייצוג מגזר',        short: 'מגזר',      desc: 'ערבי / דרוזי / אתיופי / להט"ב / מרחב כפרי' },
+  { key: 'periphery',   label: 'נציג הפריפריה',     short: 'פריפריה',   desc: 'מועמד המייצג את הפריפריה הגיאוגרפית' },
+  { key: 'protest',     label: 'מוביל מחאה',        short: 'מחאה',      desc: 'הוביל או השתתף בפעילות מחאה משמעותית' },
 ];
 
 // ======= WOMEN CANDIDATES =======
@@ -183,7 +183,7 @@ function SliderPage({ param, value, onChange, step, total, onNext, onPrev, onFin
     protest:    '✊',
   };
 
-  const LABELS = ['לא חשוב בכלל', 'לא ממש חשוב', 'חשוב במידה מה', 'חשוב', 'חשוב מאוד', 'קריטי!'];
+  const LABELS = ['לא רלוונטי לי', 'לא ממש חשוב', 'חשוב במידה מה', 'חשוב', 'חשוב מאוד', 'קריטי!'];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
@@ -207,13 +207,13 @@ function SliderPage({ param, value, onChange, step, total, onNext, onPrev, onFin
       {/* Slider */}
       <div className="px-2 mb-2">
         <input
-          type="range" min="1" max="5" value={value}
+          type="range" min="0" max="5" value={value}
           onChange={e => onChange(Number(e.target.value))}
           className="color-slider"
         />
       </div>
       <div className="flex justify-between text-xs text-gray-400 mb-4 px-1">
-        <span>1 — לא חשוב</span>
+        <span>0 — לא רלוונטי</span>
         <span>5 — חשוב מאוד</span>
       </div>
 
@@ -281,7 +281,7 @@ function CandidateCard({ candidate, rank, score, maxScore, weights }) {
             <div className="flex gap-1 mt-0.5">
               {PARAMS.map(p => (
                 <div key={p.key} className="flex-1 text-center" style={{fontSize:'8px', color:'#999'}}>
-                  {p.label.split(' ')[0]}
+                  {p.short}
                 </div>
               ))}
             </div>
