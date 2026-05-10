@@ -358,7 +358,7 @@ function ResultsSection({ weights, onRestart }) {
 // ======= MAIN APP =======
 function App() {
   const [step, setStep] = useState(0); // 0..5 = slider pages, 6 = results
-  const [weights, setWeights] = useState({ political:3, municipal:3, management:3, sector:3, periphery:3, protest:3 });
+  const [weights, setWeights] = useState({ political:3, municipal:3, management:3, security:3, periphery:3, protest:3 });
 
   const currentParam = PARAMS[step];
   const isResults = step >= PARAMS.length;
